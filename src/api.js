@@ -1,17 +1,57 @@
 import { supabase } from './supabaseClient.js';
 
-export async function getCategories() {
-  if (!supabase) return [];
-  const { data, error } = await supabase.from('categories').select('*').order('order', { ascending: true });
-  if (error) console.error('Error fetching categories:', error);
-  return data || [];
+// --- HỆ THỐNG CACHE TRÌNH DUYỆT ---
+let cachedCategories = JSON.parse(localStorage.getItem('sb_categories'));
+let cachedDocuments = JSON.parse(localStorage.getItem('sb_documents'));
+let lastFetchTime = parseInt(localStorage.getItem('sb_last_fetch') || '0', 10);
+const CACHE_TTL = 30 * 60 * 1000; // Cache tồn tại trong 30 phút
+
+function saveCacheToLocal() {
+  localStorage.setItem('sb_categories', JSON.stringify(cachedCategories || []));
+  localStorage.setItem('sb_documents', JSON.stringify(cachedDocuments || []));
 }
 
-export async function getDocuments() {
-  if (!supabase) return [];
+function updateFetchTime() {
+  lastFetchTime = Date.now();
+  localStorage.setItem('sb_last_fetch', lastFetchTime.toString());
+}
+// ----------------------------------
+
+export async function getCategories(force = false) {
+  const now = Date.now();
+  if (!force && cachedCategories && (now - lastFetchTime < CACHE_TTL)) {
+    return cachedCategories;
+  }
+  
+  if (!supabase) return cachedCategories || [];
+  const { data, error } = await supabase.from('categories').select('*').order('order', { ascending: true });
+  if (error) {
+    console.error('Error fetching categories:', error);
+    return cachedCategories || [];
+  }
+  
+  cachedCategories = data || [];
+  saveCacheToLocal();
+  return cachedCategories;
+}
+
+export async function getDocuments(force = false) {
+  const now = Date.now();
+  if (!force && cachedDocuments && (now - lastFetchTime < CACHE_TTL)) {
+    return cachedDocuments;
+  }
+  
+  if (!supabase) return cachedDocuments || [];
   const { data, error } = await supabase.from('documents').select('*').order('order', { ascending: true });
-  if (error) console.error('Error fetching documents:', error);
-  return data || [];
+  if (error) {
+    console.error('Error fetching documents:', error);
+    return cachedDocuments || [];
+  }
+  
+  cachedDocuments = data || [];
+  saveCacheToLocal();
+  updateFetchTime(); // Đánh dấu thời điểm fetch thành công cả 2 bảng
+  return cachedDocuments;
 }
 
 export async function addCategory(name) {
@@ -19,56 +59,89 @@ export async function addCategory(name) {
     alert("Chưa kết nối được Supabase (Thiếu biến môi trường).");
     return null;
   }
-  // Tính toán order
-  const { data: cats, error: countError } = await supabase.from('categories').select('id');
-  if (countError) console.error(countError);
-  
-  const order = cats ? cats.length + 1 : 1;
-  
+  const order = cachedCategories ? cachedCategories.length + 1 : 1;
   const { data, error } = await supabase.from('categories').insert([{ name, order }]).select();
   if (error) {
     console.error(error);
     alert('Lỗi khi lưu danh mục: ' + error.message);
   }
-  return data ? data[0] : null;
+  
+  if (data && data[0]) {
+    if (cachedCategories) cachedCategories.push(data[0]);
+    saveCacheToLocal();
+    return data[0];
+  }
+  return null;
 }
 
 export async function addDocument(doc) {
   if (!supabase) return null;
-  const { data: docs } = await supabase.from('documents').select('id').eq('category_id', doc.category_id);
-  const order = docs ? docs.length + 1 : 1;
+  const order = cachedDocuments ? cachedDocuments.filter(d => d.category_id === doc.category_id).length + 1 : 1;
 
   const { data, error } = await supabase.from('documents').insert([{ ...doc, order, is_pinned: false }]).select();
   if (error) console.error(error);
-  return data ? data[0] : null;
+  
+  if (data && data[0]) {
+    if (cachedDocuments) cachedDocuments.push(data[0]);
+    saveCacheToLocal();
+    return data[0];
+  }
+  return null;
 }
 
 export async function togglePin(docId) {
   if (!supabase) return;
-  const { data } = await supabase.from('documents').select('is_pinned').eq('id', docId).single();
-  if (data) {
-    await supabase.from('documents').update({ is_pinned: !data.is_pinned }).eq('id', docId);
+  const doc = cachedDocuments ? cachedDocuments.find(d => d.id === docId) : null;
+  const currentPin = doc ? doc.is_pinned : false; // Lấy từ cache nếu có
+
+  const { error } = await supabase.from('documents').update({ is_pinned: !currentPin }).eq('id', docId);
+  if (!error && doc) {
+    doc.is_pinned = !currentPin;
+    saveCacheToLocal();
   }
 }
 
 export async function updateDocCategoryAndOrder(docId, newCategoryId, newIndex) {
   if (!supabase) return;
-  // Cập nhật category_id trước
-  await supabase.from('documents').update({ category_id: newCategoryId }).eq('id', docId);
+  const { error } = await supabase.from('documents').update({ category_id: newCategoryId }).eq('id', docId);
+  if (!error && cachedDocuments) {
+    const doc = cachedDocuments.find(d => d.id === docId);
+    if (doc) {
+      doc.category_id = newCategoryId;
+      saveCacheToLocal();
+    }
+  }
 }
 
 export async function deleteDocument(docId) {
   if (!supabase) return;
-  await supabase.from('documents').delete().eq('id', docId);
+  const { error } = await supabase.from('documents').delete().eq('id', docId);
+  if (!error && cachedDocuments) {
+    cachedDocuments = cachedDocuments.filter(d => d.id !== docId);
+    saveCacheToLocal();
+  }
 }
 
 export async function deleteCategory(catId) {
   if (!supabase) return;
-  // Trên Supabase đã có rule ON DELETE CASCADE nên xóa category sẽ tự xóa luôn documents
-  await supabase.from('categories').delete().eq('id', catId);
+  const { error } = await supabase.from('categories').delete().eq('id', catId);
+  if (!error) {
+    if (cachedCategories) cachedCategories = cachedCategories.filter(c => c.id !== catId);
+    if (cachedDocuments) cachedDocuments = cachedDocuments.filter(d => d.category_id !== catId);
+    saveCacheToLocal();
+  }
 }
 
 export async function updateCategoryOrder(catId, newIndex) {
   if (!supabase) return;
-  // Cần logic phức tạp hơn để update thứ tự hàng loạt, hiện tại tạm để trống
+  // Tương tự, nếu có gọi API update DB thì nhớ cập nhật lại cachedCategories mượt mà
+  if (cachedCategories) {
+    const catIndex = cachedCategories.findIndex(c => c.id === catId);
+    if (catIndex > -1) {
+      const [cat] = cachedCategories.splice(catIndex, 1);
+      cachedCategories.splice(newIndex, 0, cat);
+      cachedCategories.forEach((c, idx) => c.order = idx + 1);
+      saveCacheToLocal();
+    }
+  }
 }
