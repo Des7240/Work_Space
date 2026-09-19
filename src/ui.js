@@ -148,16 +148,32 @@ export async function renderCategories() {
   applySearchFilter();
 }
 
+// Xử lý link để nhúng iframe được mượt mà hơn
+function getEmbedUrl(url) {
+  try {
+    // Chuyển đổi link Google Drive, Docs, Sheets thành chế độ Preview để nhúng được vào Iframe
+    if (url.includes('google.com')) {
+      if (url.includes('/edit') || url.includes('/view')) {
+        return url.replace(/\/(edit|view).*$/, '/preview');
+      }
+    }
+  } catch(e) {}
+  return url;
+}
+
 function openDocument(title, url) {
   emptyViewer.style.display = 'none';
   iframe.style.display = 'block';
-  iframe.src = url;
+  
+  // Dùng link đã xử lý cho iframe
+  iframe.src = getEmbedUrl(url);
   
   currentDocTitle.textContent = title;
   currentUrl = url;
   
   openNewTabBtn.disabled = false;
   openNewTabBtn.onclick = () => {
+    // Nút mở tab mới vẫn mở link gốc ban đầu để có thể chỉnh sửa
     window.open(url, '_blank');
   };
 }
