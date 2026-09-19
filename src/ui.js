@@ -9,6 +9,21 @@ const openNewTabBtn = document.getElementById('open-new-tab-btn');
 
 let currentUrl = '';
 
+export function applySearchFilter() {
+  const searchInput = document.getElementById('search-input');
+  if (!searchInput) return;
+  const text = searchInput.value.toLowerCase();
+  const items = document.querySelectorAll('.document-item');
+  items.forEach(item => {
+    const title = item.querySelector('.doc-title').textContent.toLowerCase();
+    if (title.includes(text)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
 export async function renderCategories() {
   const categories = await getCategories();
   const documents = await getDocuments();
@@ -126,7 +141,11 @@ export async function renderCategories() {
         // Trong thực tế sẽ gọi API lưu DB ở đây
       }
     });
+    });
   });
+
+  // Sau khi render xong, tự động áp dụng lại bộ lọc tìm kiếm hiện tại (nếu có)
+  applySearchFilter();
 }
 
 function openDocument(title, url) {
@@ -203,20 +222,18 @@ export function setupSidebar() {
     restoreHeaderBtn.style.display = 'none';
   });
   
+  restoreHeaderBtn.addEventListener('click', () => {
+    viewerHeader.classList.remove('hidden');
+    restoreHeaderBtn.style.display = 'none';
+  });
+  
   // Logic Tìm kiếm
   const searchInput = document.getElementById('search-input');
-  searchInput.addEventListener('input', (e) => {
-    const text = e.target.value.toLowerCase();
-    const items = document.querySelectorAll('.document-item');
-    items.forEach(item => {
-      const title = item.querySelector('.doc-title').textContent.toLowerCase();
-      if (title.includes(text)) {
-        item.style.display = 'flex';
-      } else {
-        item.style.display = 'none';
-      }
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      applySearchFilter();
     });
-  });
+  }
 }
 
 // Logic kéo thả Danh mục
