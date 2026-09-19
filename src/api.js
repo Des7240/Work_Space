@@ -45,3 +45,14 @@ export async function updateDocCategoryAndOrder(docId, newCategoryId, newIndex) 
     doc.category_id = newCategoryId;
   }
 }
+
+export async function deleteDocument(docId) {
+  documents = documents.filter(d => d.id !== docId);
+}
+
+export async function deleteCategory(catId) {
+  // Xóa danh mục
+  categories = categories.filter(c => c.id !== catId);
+  // Xóa các tài liệu thuộc danh mục đó
+  documents = documents.filter(d => d.category_id !== catId);
+}

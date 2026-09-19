@@ -1,4 +1,4 @@
-import { getCategories, getDocuments, togglePin, updateDocCategoryAndOrder } from './api.js';
+import { getCategories, getDocuments, togglePin, updateDocCategoryAndOrder, deleteDocument, deleteCategory } from './api.js';
 import Sortable from 'sortablejs';
 
 const categoriesContainer = document.getElementById('categories-container');
@@ -25,9 +25,10 @@ export async function renderCategories() {
     const catHeader = document.createElement('div');
     catHeader.className = 'category-header';
     catHeader.innerHTML = `
-      <span class="cat-title-toggle"><i class="fas fa-chevron-down" style="margin-right: 5px;"></i> ${cat.name}</span>
+      <span class="cat-title-toggle" style="flex:1;"><i class="fas fa-chevron-down" style="margin-right: 5px;"></i> ${cat.name}</span>
       <div>
         <button class="icon-btn add-doc-btn" data-cat-id="${cat.id}" title="Thêm tài liệu"><i class="fas fa-plus"></i></button>
+        <button class="icon-btn delete-cat-btn" data-cat-id="${cat.id}" title="Xóa danh mục này"><i class="fas fa-trash-alt" style="color: #ff5252;"></i></button>
       </div>
     `;
     
@@ -35,6 +36,16 @@ export async function renderCategories() {
     const titleToggle = catHeader.querySelector('.cat-title-toggle');
     titleToggle.addEventListener('click', () => {
       catEl.classList.toggle('collapsed');
+    });
+
+    // Xử lý nút xóa danh mục
+    const delCatBtn = catHeader.querySelector('.delete-cat-btn');
+    delCatBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (confirm(`Bạn có chắc chắn muốn xóa danh mục "${cat.name}" và toàn bộ tài liệu bên trong không?`)) {
+        await deleteCategory(cat.id);
+        renderCategories();
+      }
     });
     
     // Danh sách tài liệu trong danh mục
@@ -64,7 +75,8 @@ export async function renderCategories() {
           <div class="doc-url">${doc.url}</div>
         </div>
         <div class="doc-actions">
-          <button class="icon-btn pin-btn ${pinClass}" data-id="${doc.id}"><i class="fas fa-thumbtack"></i></button>
+          <button class="icon-btn pin-btn ${pinClass}" data-id="${doc.id}" title="Ghim"><i class="fas fa-thumbtack"></i></button>
+          <button class="icon-btn delete-doc-btn" data-id="${doc.id}" title="Xóa"><i class="fas fa-trash-alt"></i></button>
         </div>
       `;
       
@@ -80,6 +92,16 @@ export async function renderCategories() {
         e.stopPropagation(); // Ngăn không cho click truyền xuống doc-info
         await togglePin(doc.id);
         renderCategories(); // Render lại để cập nhật thứ tự
+      });
+
+      // Xử lý sự kiện Xóa tài liệu
+      const delDocBtn = docEl.querySelector('.delete-doc-btn');
+      delDocBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm(`Xóa tài liệu "${doc.title}"?`)) {
+          await deleteDocument(doc.id);
+          renderCategories();
+        }
       });
       
       docListEl.appendChild(docEl);
