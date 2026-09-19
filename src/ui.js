@@ -141,8 +141,8 @@ export async function renderCategories() {
         // Trong thực tế sẽ gọi API lưu DB ở đây
       }
     });
-    });
   });
+
 
   // Sau khi render xong, tự động áp dụng lại bộ lọc tìm kiếm hiện tại (nếu có)
   applySearchFilter();
