@@ -1,68 +1,66 @@
-// Mock data for UI development before hooking up Supabase
-let categories = [
-  { id: 'c1', name: 'Tài liệu chung', order: 1 },
-  { id: 'c2', name: 'Thiết kế (Figma)', order: 2 },
-];
-
-let documents = [
-  { id: 'd1', category_id: 'c1', title: 'Đặc tả yêu cầu (SRS)', url: 'https://vi.wikipedia.org/wiki/Công_nghệ_thông_tin', notes: 'Đọc kỹ phần UI', is_pinned: true, order: 1 },
-  { id: 'd2', category_id: 'c1', title: 'Tiến độ dự án (Sheet)', url: 'https://example.com', notes: '', is_pinned: false, order: 2 },
-  { id: 'd3', category_id: 'c2', title: 'Figma Design', url: 'https://vi.wikipedia.org/wiki/Figma', notes: 'Bản draft 1', is_pinned: true, order: 1 },
-];
+import { supabase } from './supabaseClient.js';
 
 export async function getCategories() {
-  return categories.sort((a, b) => a.order - b.order);
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('categories').select('*').order('order', { ascending: true });
+  if (error) console.error('Error fetching categories:', error);
+  return data || [];
 }
 
 export async function getDocuments() {
-  return documents.sort((a, b) => a.order - b.order);
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('documents').select('*').order('order', { ascending: true });
+  if (error) console.error('Error fetching documents:', error);
+  return data || [];
 }
 
-// Giả lập hàm gọi API
 export async function addCategory(name) {
-  const newCat = { id: 'c' + Date.now(), name, order: categories.length + 1 };
-  categories.push(newCat);
-  return newCat;
+  if (!supabase) return null;
+  // Tính toán order
+  const { data: cats } = await supabase.from('categories').select('id');
+  const order = cats ? cats.length + 1 : 1;
+  
+  const { data, error } = await supabase.from('categories').insert([{ name, order }]).select();
+  if (error) console.error(error);
+  return data ? data[0] : null;
 }
 
 export async function addDocument(doc) {
-  const newDoc = { id: 'd' + Date.now(), ...doc, order: documents.filter(d => d.category_id === doc.category_id).length + 1, is_pinned: false };
-  documents.push(newDoc);
-  return newDoc;
+  if (!supabase) return null;
+  const { data: docs } = await supabase.from('documents').select('id').eq('category_id', doc.category_id);
+  const order = docs ? docs.length + 1 : 1;
+
+  const { data, error } = await supabase.from('documents').insert([{ ...doc, order, is_pinned: false }]).select();
+  if (error) console.error(error);
+  return data ? data[0] : null;
 }
 
 export async function togglePin(docId) {
-  const doc = documents.find(d => d.id === docId);
-  if (doc) {
-    doc.is_pinned = !doc.is_pinned;
+  if (!supabase) return;
+  const { data } = await supabase.from('documents').select('is_pinned').eq('id', docId).single();
+  if (data) {
+    await supabase.from('documents').update({ is_pinned: !data.is_pinned }).eq('id', docId);
   }
 }
 
 export async function updateDocCategoryAndOrder(docId, newCategoryId, newIndex) {
-  const doc = documents.find(d => d.id === docId);
-  if (doc) {
-    // Tạm thời với mock data ta chỉ cập nhật category, order sẽ tự update khi reload hoặc làm tương đối
-    doc.category_id = newCategoryId;
-  }
+  if (!supabase) return;
+  // Cập nhật category_id trước
+  await supabase.from('documents').update({ category_id: newCategoryId }).eq('id', docId);
 }
 
 export async function deleteDocument(docId) {
-  documents = documents.filter(d => d.id !== docId);
+  if (!supabase) return;
+  await supabase.from('documents').delete().eq('id', docId);
 }
 
 export async function deleteCategory(catId) {
-  // Xóa danh mục
-  categories = categories.filter(c => c.id !== catId);
-  // Xóa các tài liệu thuộc danh mục đó
-  documents = documents.filter(d => d.category_id !== catId);
+  if (!supabase) return;
+  // Trên Supabase đã có rule ON DELETE CASCADE nên xóa category sẽ tự xóa luôn documents
+  await supabase.from('categories').delete().eq('id', catId);
 }
 
 export async function updateCategoryOrder(catId, newIndex) {
-  const catIndex = categories.findIndex(c => c.id === catId);
-  if (catIndex > -1) {
-    const [cat] = categories.splice(catIndex, 1);
-    categories.splice(newIndex, 0, cat);
-    // Cập nhật lại thuộc tính order cho toàn bộ mảng
-    categories.forEach((c, idx) => c.order = idx + 1);
-  }
+  if (!supabase) return;
+  // Cần logic phức tạp hơn để update thứ tự hàng loạt, hiện tại tạm để trống
 }
