@@ -6,9 +6,9 @@
   --accent-color: #00bcd4;
   --shadow-light: #ffffff;
   --shadow-dark: #a3b1c6;
-  
+
   /* Neumorphism Shadows */
-  --neu-flat:  8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+  --neu-flat: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
   --neu-pressed: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
   --neu-hover: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
   --neu-sm: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
@@ -19,10 +19,11 @@
   --bg-color: #2a2a2a;
   --text-color: #e0e0e0;
   --text-muted: #a0a0a0;
-  --accent-color: #00bcd4; /* Cyan Accent */
+  --accent-color: #00bcd4;
+  /* Cyan Accent */
   --shadow-light: #363636;
   --shadow-dark: #1e1e1e;
-  
+
   /* Shadows update automatically because they use the css variables above */
 }
 
@@ -82,7 +83,8 @@ body {
   transition: background 0.2s;
 }
 
-.resizer:hover, .resizer.resizing {
+.resizer:hover,
+.resizer.resizing {
   background: var(--shadow-dark);
   opacity: 0.2;
 }
@@ -90,7 +92,7 @@ body {
 .main-content {
   flex: 1;
   height: 100%;
-  padding: 20px;
+  padding: 0px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -110,15 +112,17 @@ body {
   box-shadow: var(--neu-flat);
   color: var(--text-color);
   cursor: pointer;
-  display: none; /* Chỉ hiện khi sidebar bị ẩn */
+  display: none;
+  /* Chỉ hiện khi sidebar bị ẩn */
 }
 
 .toggle-sidebar-btn:hover {
   color: var(--accent-color);
 }
 
-.sidebar.collapsed + .resizer + .main-content .toggle-sidebar-btn {
-  display: block; /* Hiện nút ở góc main-content khi sidebar ẩn */
+.sidebar.collapsed+.resizer+.main-content .toggle-sidebar-btn {
+  display: block;
+  /* Hiện nút ở góc main-content khi sidebar ẩn */
 }
 
 /* Tiêu đề danh mục có thể click để thu gọn */
@@ -136,7 +140,7 @@ body {
 }
 
 .category-header:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .category-header i.fa-chevron-down {
@@ -181,7 +185,8 @@ body {
   color: var(--accent-color);
 }
 
-.neu-button:active, .neu-button.active {
+.neu-button:active,
+.neu-button.active {
   box-shadow: var(--neu-pressed);
   color: var(--accent-color);
 }
@@ -217,11 +222,12 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 10px;
-  margin: -10px; /* offset padding for scroll */
+  margin: -10px;
+  /* offset padding for scroll */
   display: flex;
   flex-direction: column;
   gap: 15px;
-  
+
   /* Ẩn thanh cuộn trên Firefox, IE và Edge */
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -246,7 +252,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 10px; /* For sortablejs empty state */
+  min-height: 10px;
+  /* For sortablejs empty state */
 }
 
 .document-item {
@@ -302,7 +309,8 @@ body {
 }
 
 .icon-btn.pinned {
-  color: #ff9800; /* Orange for pinned */
+  color: #ff9800;
+  /* Orange for pinned */
 }
 
 /* --- Main Content --- */
@@ -343,7 +351,8 @@ body {
   height: 100%;
   border: none;
   border-radius: 12px;
-  background-color: white; /* iframe content usually expects white bg */
+  background-color: white;
+  /* iframe content usually expects white bg */
 }
 
 .empty-state {
@@ -369,7 +378,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
