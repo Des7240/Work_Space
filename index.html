@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Workspace Hub</title>
+    <!-- Thêm Font Awesome để dùng icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Link file CSS chính -->
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div id="app" class="app-container">
+      
+      <!-- Sidebar -->
+      <aside class="sidebar neu-box" id="sidebar">
+        <div class="sidebar-header">
+          <h2>Workspace</h2>
+          <div>
+            <button id="theme-toggle" class="icon-btn" title="Toggle Theme">
+              <i class="fas fa-moon"></i>
+            </button>
+            <button id="close-sidebar-btn" class="icon-btn" title="Ẩn Sidebar">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="search-container">
+          <input type="text" id="search-input" class="neu-input" placeholder="Tìm kiếm tài liệu..." />
+        </div>
+
+        <button id="add-category-btn" class="neu-button" style="width: 100%;">
+          <i class="fas fa-folder-plus"></i> Thêm Danh Mục Mới
+        </button>
+
+        <div id="categories-container" class="categories-list">
+          <!-- Danh mục và tài liệu sẽ được render vào đây bởi JavaScript -->
+        </div>
+      </aside>
+
+      <!-- Resizer cho phép kéo thả để đổi kích thước sidebar -->
+      <div class="resizer" id="resizer"></div>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <!-- Nút hiện sidebar khi đã ẩn -->
+        <button id="open-sidebar-btn" class="toggle-sidebar-btn" title="Hiện Sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Nút hiện lại header khi đã ẩn -->
+        <button id="restore-header-btn" class="toggle-sidebar-btn" style="right: 20px; left: auto; top: 20px; display: none; z-index: 25;" title="Hiện Thanh Tiêu Đề">
+          <i class="fas fa-expand-arrows-alt"></i>
+        </button>
+
+        <div class="viewer-header neu-box" id="viewer-header" style="padding: 15px 20px; border-radius: 12px; margin-bottom: 20px;">
+          <h2 id="current-doc-title">Chưa chọn tài liệu</h2>
+          <div class="viewer-actions">
+            <button id="open-new-tab-btn" class="neu-button" disabled title="Mở sang tab mới nếu iframe bị chặn">
+              <i class="fas fa-external-link-alt"></i> Mở Tab Mới
+            </button>
+            <button id="hide-header-btn" class="icon-btn" title="Ẩn Thanh Tiêu Đề" style="margin-left: 10px;">
+              <i class="fas fa-compress-arrows-alt"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="iframe-container">
+          <div id="empty-viewer" class="empty-state">
+            <i class="fas fa-file-alt"></i>
+            <p>Chọn một tài liệu từ danh sách bên trái để xem</p>
+          </div>
+          <iframe id="document-iframe" src="" style="display: none;" allowfullscreen sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Modals -->
+    <!-- Modal Thêm/Sửa Danh mục -->
+    <div id="category-modal" class="modal-overlay">
+      <div class="modal-content neu-box">
+        <h3 id="category-modal-title">Thêm Danh Mục</h3>
+        <input type="hidden" id="category-id-input">
+        <input type="text" id="category-name-input" class="neu-input" placeholder="Tên danh mục...">
+        <div class="modal-actions">
+          <button class="neu-button close-modal-btn">Hủy</button>
+          <button id="save-category-btn" class="neu-button">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Thêm/Sửa Tài liệu -->
+    <div id="document-modal" class="modal-overlay">
+      <div class="modal-content neu-box">
+        <h3 id="document-modal-title">Thêm Tài Liệu</h3>
+        <input type="hidden" id="doc-id-input">
+        <input type="hidden" id="doc-category-id-input">
+        
+        <label>Tiêu đề</label>
+        <input type="text" id="doc-title-input" class="neu-input" placeholder="Ví dụ: Báo cáo đồ án">
+        
+        <label style="margin-top: 10px;">Đường dẫn (URL)</label>
+        <input type="url" id="doc-url-input" class="neu-input" placeholder="https://docs.google.com/...">
+        
+        <label style="margin-top: 10px;">Ghi chú (Tùy chọn)</label>
+        <input type="text" id="doc-notes-input" class="neu-input" placeholder="Ghi chú ngắn gọn...">
+        
+        <div class="modal-actions" style="margin-top: 20px;">
+          <button class="neu-button close-modal-btn">Hủy</button>
+          <button id="save-document-btn" class="neu-button">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
