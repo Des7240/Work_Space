@@ -1,4 +1,4 @@
-import { getCategories, getDocuments, togglePin, updateDocCategoryAndOrder, deleteDocument, deleteCategory } from './api.js';
+import { getCategories, getDocuments, togglePin, updateDocCategoryAndOrder, deleteDocument, deleteCategory, updateCategoryOrder } from './api.js';
 import Sortable from 'sortablejs';
 
 const categoriesContainer = document.getElementById('categories-container');
@@ -20,6 +20,7 @@ export async function renderCategories() {
     
     const catEl = document.createElement('div');
     catEl.className = 'category-item';
+    catEl.setAttribute('data-cat-id', cat.id);
     
     // Header danh mục
     const catHeader = document.createElement('div');
@@ -215,5 +216,22 @@ export function setupSidebar() {
         item.style.display = 'none';
       }
     });
+  });
+}
+
+// Logic kéo thả Danh mục
+export function setupCategoriesSortable() {
+  new Sortable(categoriesContainer, {
+    animation: 150,
+    handle: '.category-header', // Nắm phần tiêu đề để kéo thả danh mục
+    ghostClass: 'neu-pressed',
+    onEnd: async function (evt) {
+      const itemEl = evt.item;
+      const catId = itemEl.getAttribute('data-cat-id');
+      if (catId) {
+        await updateCategoryOrder(catId, evt.newIndex);
+        // Ở thực tế sẽ gọi API lưu DB ở đây
+      }
+    }
   });
 }

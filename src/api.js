@@ -56,3 +56,13 @@ export async function deleteCategory(catId) {
   // Xóa các tài liệu thuộc danh mục đó
   documents = documents.filter(d => d.category_id !== catId);
 }
+
+export async function updateCategoryOrder(catId, newIndex) {
+  const catIndex = categories.findIndex(c => c.id === catId);
+  if (catIndex > -1) {
+    const [cat] = categories.splice(catIndex, 1);
+    categories.splice(newIndex, 0, cat);
+    // Cập nhật lại thuộc tính order cho toàn bộ mảng
+    categories.forEach((c, idx) => c.order = idx + 1);
+  }
+}
