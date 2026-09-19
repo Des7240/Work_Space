@@ -221,18 +221,15 @@ body {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  
+  /* Ẩn thanh cuộn trên Firefox, IE và Edge */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--shadow-dark);
-  border-radius: 4px;
+/* Ẩn thanh cuộn trên Chrome, Safari, Opera */
+.categories-list::-webkit-scrollbar {
+  display: none;
 }
 
 .category-item {
