@@ -151,11 +151,15 @@ export async function renderCategories() {
 // Xử lý link để nhúng iframe được mượt mà hơn
 function getEmbedUrl(url) {
   try {
-    // Chuyển đổi link Google Drive, Docs, Sheets thành chế độ Preview để nhúng được vào Iframe
     if (url.includes('google.com')) {
-      if (url.includes('/edit') || url.includes('/view')) {
-        return url.replace(/\/(edit|view).*$/, '/preview');
+      // 1. Nếu là link Thư mục (Folder) Google Drive (Bắt buộc phải dùng widget)
+      const folderMatch = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+      if (folderMatch) {
+        return `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}#grid`;
       }
+      
+      // 2. Với các file Docs/Sheets/Slides thông thường, giữ nguyên link gốc
+      // để người dùng có thể giữ được thanh công cụ chỉnh sửa (Edit) trong Iframe.
     }
   } catch(e) {}
   return url;
