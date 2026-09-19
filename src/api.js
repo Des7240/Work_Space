@@ -15,13 +15,21 @@ export async function getDocuments() {
 }
 
 export async function addCategory(name) {
-  if (!supabase) return null;
+  if (!supabase) {
+    alert("Chưa kết nối được Supabase (Thiếu biến môi trường).");
+    return null;
+  }
   // Tính toán order
-  const { data: cats } = await supabase.from('categories').select('id');
+  const { data: cats, error: countError } = await supabase.from('categories').select('id');
+  if (countError) console.error(countError);
+  
   const order = cats ? cats.length + 1 : 1;
   
   const { data, error } = await supabase.from('categories').insert([{ name, order }]).select();
-  if (error) console.error(error);
+  if (error) {
+    console.error(error);
+    alert('Lỗi khi lưu danh mục: ' + error.message);
+  }
   return data ? data[0] : null;
 }
 
