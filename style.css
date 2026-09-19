@@ -401,3 +401,48 @@ body {
   gap: 10px;
   margin-top: 10px;
 }
+
+/* Dropdown Menu (3-dots) */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: var(--bg-color);
+  min-width: 130px;
+  box-shadow: var(--neu-flat);
+  border-radius: 8px;
+  z-index: 100;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.dropdown-content.show {
+  display: block;
+}
+
+.dropdown-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-color);
+  box-shadow: var(--neu-pressed);
+  color: var(--accent-color);
+}
+
+.dropdown-item.danger {
+  color: #ff5252;
+}

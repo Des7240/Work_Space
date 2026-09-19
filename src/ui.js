@@ -1,4 +1,4 @@
-import { getCategories, getDocuments, togglePin, updateDocCategoryAndOrder, deleteDocument, deleteCategory, updateCategoryOrder } from './api.js';
+import { getCategories, getDocuments, togglePin, deleteDocument, deleteCategory, saveCategoriesOrder, saveDocumentsOrder } from './api.js';
 import Sortable from 'sortablejs';
 
 const categoriesContainer = document.getElementById('categories-container');
@@ -24,6 +24,15 @@ export function applySearchFilter() {
   });
 }
 
+// Xử lý đóng Dropdown khi click ra ngoài
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dropdown')) {
+    document.querySelectorAll('.dropdown-content.show').forEach(el => {
+      el.classList.remove('show');
+    });
+  }
+});
+
 export async function renderCategories() {
   const categories = await getCategories();
   const documents = await getDocuments();
@@ -44,7 +53,13 @@ export async function renderCategories() {
       <span class="cat-title-toggle" style="flex:1;"><i class="fas fa-chevron-down" style="margin-right: 5px;"></i> ${cat.name}</span>
       <div>
         <button class="icon-btn add-doc-btn" data-cat-id="${cat.id}" title="Thêm tài liệu"><i class="fas fa-plus"></i></button>
-        <button class="icon-btn delete-cat-btn" data-cat-id="${cat.id}" title="Xóa danh mục này"><i class="fas fa-trash-alt" style="color: #ff5252;"></i></button>
+        <div class="dropdown">
+          <button class="icon-btn dropbtn" title="Tùy chọn"><i class="fas fa-ellipsis-v"></i></button>
+          <div class="dropdown-content">
+            <div class="dropdown-item edit-cat-btn"><i class="fas fa-edit"></i> Đổi tên</div>
+            <div class="dropdown-item danger delete-cat-btn"><i class="fas fa-trash-alt"></i> Xóa</div>
+          </div>
+        </div>
       </div>
     `;
     
@@ -54,14 +69,36 @@ export async function renderCategories() {
       catEl.classList.toggle('collapsed');
     });
 
+    // Mở Dropdown danh mục
+    const catDropBtn = catHeader.querySelector('.dropbtn');
+    const catDropContent = catHeader.querySelector('.dropdown-content');
+    catDropBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.dropdown-content.show').forEach(el => {
+        if (el !== catDropContent) el.classList.remove('show');
+      });
+      catDropContent.classList.toggle('show');
+    });
+
     // Xử lý nút xóa danh mục
     const delCatBtn = catHeader.querySelector('.delete-cat-btn');
     delCatBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      catDropContent.classList.remove('show');
       if (confirm(`Bạn có chắc chắn muốn xóa danh mục "${cat.name}" và toàn bộ tài liệu bên trong không?`)) {
         await deleteCategory(cat.id);
         renderCategories();
       }
+    });
+
+    // Xử lý nút sửa danh mục
+    const editCatBtn = catHeader.querySelector('.edit-cat-btn');
+    editCatBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      catDropContent.classList.remove('show');
+      document.getElementById('category-id-input').value = cat.id;
+      document.getElementById('category-name-input').value = cat.name;
+      document.getElementById('category-modal').classList.add('active');
     });
     
     // Danh sách tài liệu trong danh mục
@@ -92,7 +129,13 @@ export async function renderCategories() {
         </div>
         <div class="doc-actions">
           <button class="icon-btn pin-btn ${pinClass}" data-id="${doc.id}" title="Ghim"><i class="fas fa-thumbtack"></i></button>
-          <button class="icon-btn delete-doc-btn" data-id="${doc.id}" title="Xóa"><i class="fas fa-trash-alt"></i></button>
+          <div class="dropdown">
+            <button class="icon-btn dropbtn" title="Tùy chọn"><i class="fas fa-ellipsis-v"></i></button>
+            <div class="dropdown-content">
+              <div class="dropdown-item edit-doc-btn"><i class="fas fa-edit"></i> Sửa</div>
+              <div class="dropdown-item danger delete-doc-btn"><i class="fas fa-trash-alt"></i> Xóa</div>
+            </div>
+          </div>
         </div>
       `;
       
@@ -110,14 +153,39 @@ export async function renderCategories() {
         renderCategories(); // Render lại để cập nhật thứ tự
       });
 
+      // Mở Dropdown tài liệu
+      const docDropBtn = docEl.querySelector('.dropbtn');
+      const docDropContent = docEl.querySelector('.dropdown-content');
+      docDropBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.dropdown-content.show').forEach(el => {
+          if (el !== docDropContent) el.classList.remove('show');
+        });
+        docDropContent.classList.toggle('show');
+      });
+
       // Xử lý sự kiện Xóa tài liệu
       const delDocBtn = docEl.querySelector('.delete-doc-btn');
       delDocBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        docDropContent.classList.remove('show');
         if (confirm(`Xóa tài liệu "${doc.title}"?`)) {
           await deleteDocument(doc.id);
           renderCategories();
         }
+      });
+
+      // Xử lý sự kiện Sửa tài liệu
+      const editDocBtn = docEl.querySelector('.edit-doc-btn');
+      editDocBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        docDropContent.classList.remove('show');
+        document.getElementById('doc-id-input').value = doc.id;
+        document.getElementById('doc-category-id-input').value = doc.category_id;
+        document.getElementById('doc-title-input').value = doc.title;
+        document.getElementById('doc-url-input').value = doc.url;
+        document.getElementById('doc-notes-input').value = doc.notes || '';
+        document.getElementById('document-modal').classList.add('active');
       });
       
       docListEl.appendChild(docEl);
@@ -134,11 +202,10 @@ export async function renderCategories() {
       handle: '.doc-info', // Cho phép nắm vào toàn bộ vùng thông tin để kéo
       ghostClass: 'neu-pressed',
       onEnd: async function (evt) {
-        const itemEl = evt.item;
-        const docId = itemEl.getAttribute('data-doc-id');
         const newCatId = evt.to.getAttribute('data-cat-id');
-        await updateDocCategoryAndOrder(docId, newCatId, evt.newIndex);
-        // Trong thực tế sẽ gọi API lưu DB ở đây
+        const items = evt.to.querySelectorAll('.document-item');
+        const orderedIds = Array.from(items).map(item => item.getAttribute('data-doc-id'));
+        await saveDocumentsOrder(newCatId, orderedIds);
       }
     });
   });
@@ -263,12 +330,9 @@ export function setupCategoriesSortable() {
     handle: '.category-header', // Nắm phần tiêu đề để kéo thả danh mục
     ghostClass: 'neu-pressed',
     onEnd: async function (evt) {
-      const itemEl = evt.item;
-      const catId = itemEl.getAttribute('data-cat-id');
-      if (catId) {
-        await updateCategoryOrder(catId, evt.newIndex);
-        // Ở thực tế sẽ gọi API lưu DB ở đây
-      }
+      const items = categoriesContainer.querySelectorAll('.category-item');
+      const orderedIds = Array.from(items).map(item => item.getAttribute('data-cat-id'));
+      await saveCategoriesOrder(orderedIds);
     }
   });
 }

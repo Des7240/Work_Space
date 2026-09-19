@@ -74,6 +74,17 @@ export async function addCategory(name) {
   return null;
 }
 
+export async function updateCategory(id, name) {
+  if (!supabase) return null;
+  const { error } = await supabase.from('categories').update({ name }).eq('id', id);
+  if (!error && cachedCategories) {
+    const cat = cachedCategories.find(c => c.id === id);
+    if (cat) cat.name = name;
+    saveCacheToLocal();
+  }
+  return error ? null : true;
+}
+
 export async function addDocument(doc) {
   if (!supabase) return null;
   const order = cachedDocuments ? cachedDocuments.filter(d => d.category_id === doc.category_id).length + 1 : 1;
@@ -89,6 +100,17 @@ export async function addDocument(doc) {
   return null;
 }
 
+export async function updateDocument(id, doc) {
+  if (!supabase) return null;
+  const { error } = await supabase.from('documents').update(doc).eq('id', id);
+  if (!error && cachedDocuments) {
+    const cachedDoc = cachedDocuments.find(d => d.id === id);
+    if (cachedDoc) Object.assign(cachedDoc, doc);
+    saveCacheToLocal();
+  }
+  return error ? null : true;
+}
+
 export async function togglePin(docId) {
   if (!supabase) return;
   const doc = cachedDocuments ? cachedDocuments.find(d => d.id === docId) : null;
@@ -101,15 +123,20 @@ export async function togglePin(docId) {
   }
 }
 
-export async function updateDocCategoryAndOrder(docId, newCategoryId, newIndex) {
+// Cập nhật vị trí nhiều danh mục
+export async function saveCategoriesOrder(orderedIds) {
   if (!supabase) return;
-  const { error } = await supabase.from('documents').update({ category_id: newCategoryId }).eq('id', docId);
-  if (!error && cachedDocuments) {
-    const doc = cachedDocuments.find(d => d.id === docId);
-    if (doc) {
-      doc.category_id = newCategoryId;
-      saveCacheToLocal();
-    }
+  const promises = orderedIds.map((id, index) => 
+    supabase.from('categories').update({ order: index + 1 }).eq('id', id)
+  );
+  await Promise.all(promises);
+  if (cachedCategories) {
+    cachedCategories.forEach(c => {
+      const idx = orderedIds.indexOf(c.id);
+      if (idx > -1) c.order = idx + 1;
+    });
+    cachedCategories.sort((a,b) => a.order - b.order);
+    saveCacheToLocal();
   }
 }
 
@@ -132,16 +159,21 @@ export async function deleteCategory(catId) {
   }
 }
 
-export async function updateCategoryOrder(catId, newIndex) {
+// Cập nhật vị trí nhiều tài liệu sau khi kéo thả
+export async function saveDocumentsOrder(newCategoryId, orderedIds) {
   if (!supabase) return;
-  // Tương tự, nếu có gọi API update DB thì nhớ cập nhật lại cachedCategories mượt mà
-  if (cachedCategories) {
-    const catIndex = cachedCategories.findIndex(c => c.id === catId);
-    if (catIndex > -1) {
-      const [cat] = cachedCategories.splice(catIndex, 1);
-      cachedCategories.splice(newIndex, 0, cat);
-      cachedCategories.forEach((c, idx) => c.order = idx + 1);
-      saveCacheToLocal();
-    }
+  const promises = orderedIds.map((id, index) => 
+    supabase.from('documents').update({ category_id: newCategoryId, order: index + 1 }).eq('id', id)
+  );
+  await Promise.all(promises);
+  if (cachedDocuments) {
+    cachedDocuments.forEach(d => {
+      const idx = orderedIds.indexOf(d.id);
+      if (idx > -1) {
+        d.order = idx + 1;
+        d.category_id = newCategoryId;
+      }
+    });
+    saveCacheToLocal();
   }
 }
